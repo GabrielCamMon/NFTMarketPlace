@@ -1,23 +1,31 @@
 import { useEffect, useState } from "react";
-import logo from "./logo.png";
+
 import { Col, Row, Card, Button } from "react-bootstrap";
 import { ethers } from "ethers";
+import token from "../services/token";
 
-const Home = (marketplace, nft) => {
+const Home = ({ marketplace, nft }) => {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
+
   const loadMarketplaceItems = async () => {
-    const itemCount = await marketplace.itemCount();
+    let itemCount = await marketplace.itemCount();
+    console.log(itemCount);
     let items = [];
+
     for (let i = 1; i <= itemCount; i++) {
       const item = await marketplace.items(i);
 
       if (!item.sold) {
         //get uir from nft contract
+
         const uri = await nft.tokenURI(item.tokenId);
         // use uri to fetch the nft metadata stored on ipfs
+        console.log(uri);
         const response = await fetch(uri);
+        console.log(response);
         const metadata = await response.json();
+        console.log(metadata);
         //get total price of item (item price + fee)
         const totalPrice = await marketplace.getTotalPrice(item.itemId);
         // Add item to items array
@@ -31,12 +39,12 @@ const Home = (marketplace, nft) => {
         });
       }
       setItems(items);
-      setLoading(false);
     }
+    setLoading(false);
   };
   const buyMarketItem = async (item) => {
     await (
-      await marketplace.puchaseItem(item.itemId, { value: item.totalPrice })
+      await marketplace.purchaseItem(item.itemId, { value: item.totalPrice })
     ).wait();
     loadMarketplaceItems();
   };
@@ -45,13 +53,11 @@ const Home = (marketplace, nft) => {
     loadMarketplaceItems();
   }, []);
 
-  if (loading)
-    return (
-      <main style={{ padding: "1rem 0" }}>
-        <h2>Loading...</h2>
-      </main>
-    );
-  return (
+  return loading ? (
+    <main style={{ padding: "1rem 0" }}>
+      <h2>Loading... </h2>
+    </main>
+  ) : (
     <div className="flex justify-center">
       {items.length > 0 ? (
         <div className="px-5 container">
